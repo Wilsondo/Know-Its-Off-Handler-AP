@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en-us">
 <head>
     <!-- Required meta tags -->
@@ -8,56 +8,58 @@
 
     <!-- Bootstrap CSS -->
     <!-- link href="file:///C:\ (absolute path)-->
+    <link href="/beavs.ico" rel="icon">
     <link href="/bootstrap.min.css" rel="stylesheet">
 
     <title>Know It's Off Device Setup</title>
 </head>
-<body style="background-color:#1b1c1f">
+<body class="text-center text-light my-5 mx-5" style="background-color:#1b1c1f">
     <!-- Main Webpage -->
     <div id="app">
-        <div class="mt-5 mb-5 container bg-dark border">
-            <div class="row justify-content-md-center text-light mb-5">
-                <h1>Know It's Off Device Setup</h1>
+        <h1>Know It's Off Device Setup</h1>
+        <form class="input-group mb-3 pt-5" action="/get">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="basic-addon1">SSID</span>
             </div>
-            <div class="row justify-content-md-center text-light mb-5">
-                <form action="/get">
-                    <div class="form-group">
-                        <label>SSID: %ROUTERSSID%</label>
-                        <input name="routerSSID" type="text" class="form-control" placeholder="SSID">
-                    </div>
-                    <button class="btn btn-primary" type="submit">Update SSID</button>
-                </form>
-                <form action="/get">
-                    <div class="form-group">
-                        <label>Password: %ROUTERPASSWORD%</label>
-                        <input name="routerPASS" type="text" class="form-control" placeholder="Password">
-                    </div>
-                    <button class="btn btn-primary" type="submit">Update Password</button>
-                </form>
-                <form action="/get">
-                    <div class="form-group">
-                        <label>Hostname: %HOSTNAME%</label>
-                        <input name="hostID" type="text" class="form-control" placeholder="Host">
-                    </div>
-                    <button class="btn btn-primary" type="submit">Update Hostname</button>
-                </form>
-                <form action="/trust_root.cer">
-                    <label>Certificate:</label>
-                    <button class="btn btn-primary" type="submit">View Current Certificate</button>
-                </form>
-                <form action="/upload" method="post" enctype="multipart/form-data">
-                    <div class="form-group">
-                        <input class="btn btn-primary" name="trust_root" type="file">
-                        <button class="btn btn-primary" type="submit">Upload New Certificate</button>
-                    </div>
-                </form>
-                <form action="/calibrate">
-                    <button class="btn btn-success btn-space" type="submit">Calibrate Light Sensor</button>
-                </form>
-                <form action="/reset">
-                    <button class="btn btn-danger btn-space" type="submit">Save Config and Reset</button>
-                </form>
+            <input type="text" class="form-control" placeholder="%ROUTERSSID%" aria-label="SSID" aria-describedby="basic-addon1">
+            <div class="input-group-append">
+                <button class="btn btn-outline-primary" type="button">Update SSID</button>
             </div>
+        </form>
+        <form class="input-group mb-3 pt-3" action="/get">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="basic-addon2">Password</span>
+            </div>
+            <input type="text" class="form-control" placeholder="%ROUTERPASSWORD%" aria-label="Password" aria-describedby="basic-addon2">
+            <div class="input-group-append">
+                <button class="btn btn-outline-primary" type="button">Update Password</button>
+            </div>
+        </form>
+        <form class="input-group mb-3 pt-3" action="/get">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="basic-addon3">Hostname</span>
+            </div>
+            <input type="text" class="form-control" placeholder="%HOSTNAME%" aria-label="Hostname" aria-describedby="basic-addon3">
+            <div class="input-group-append">
+                <button class="btn btn-outline-primary" type="button">Update Hostname</button>
+            </div>
+        </form>
+        <form class="input-group mb-3 pt-5" action="/trust_root.cer">
+            <div class="custom-file bg-success">
+              <input type="file" class="custom-file-input" id="trust_root">
+              <label class="custom-file-label bg-secondary" style="color:white" type="file" for="trust_root">Certificate</label>
+            </div>
+            <form class="input-group-append" action="/upload" method="post" enctype="multipart/form-data">
+              <button class="btn btn-outline-primary" type="submit">Upload</button>
+            </form>
+        </form>
+
+        <form class="form-group pt-5" action="/calibrate">
+            <button class="btn btn-lg btn-block btn-success btn-space" type="submit">Calibrate Light Sensor</button>
+        </form>
+        <form class="form-group" action="/reset">
+            <button class="btn btn-lg btn-block btn-danger btn-space" type="submit">Save Config and Reset</button>
+        </form>
         </div>
     </div>
 
