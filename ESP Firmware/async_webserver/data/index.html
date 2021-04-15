@@ -8,7 +8,6 @@
 
     <!-- Bootstrap CSS -->
     <!-- link href="file:///C:\ (absolute path)-->
-    <link href="/beavs.ico" rel="icon">
     <link href="/bootstrap.min.css" rel="stylesheet">
 
     <title>Know It's Off Device Setup</title>
@@ -17,7 +16,8 @@
     <!-- Main Webpage -->
     <div id="app">
         <h1>Know It's Off Device Setup</h1>
-        <form class="input-group mb-3 pt-5" action="/get">
+        <p class="pt-2">Device ID: %ID%</p>
+        <form class="input-group mb-3 pt-3" action="/get">
             <div class="input-group-prepend">
               <span class="input-group-text" id="basic-addon1">SSID</span>
             </div>
@@ -44,14 +44,17 @@
                 <button class="btn btn-outline-primary" type="button">Update Hostname</button>
             </div>
         </form>
-        <form class="input-group mb-3 pt-5" action="/trust_root.cer">
+        <form class="input-group pt-3" action="/upload" method="post" enctype="multipart/form-data">
             <div class="custom-file bg-success">
               <input type="file" class="custom-file-input" id="trust_root">
               <label class="custom-file-label bg-secondary" style="color:white" type="file" for="trust_root">Certificate</label>
             </div>
-            <form class="input-group-append" action="/upload" method="post" enctype="multipart/form-data">
-              <button class="btn btn-outline-primary" type="submit">Upload</button>
+            <form class="input-group-append">
+                <button class="btn btn-outline-primary" type="submit">Upload</button>
             </form>
+        </form>
+        <form class="pt-3" action="/trust_root.cer" method="get">
+            <button class="btn btn-block btn-outline-secondary">View Certificate</button>
         </form>
 
         <form class="form-group pt-5" action="/calibrate">
