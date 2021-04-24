@@ -21,7 +21,7 @@ WiFiClientSecure httpsClient;  // client object to connect to database handler
 
 /* Device variables */
 int digi_pot = 0;  // holds the value that the digital potentiometer is set to
-int device_id = 1023; // holds the unique device ID number
+int device_id = 1; // holds the unique device ID number
 bool eof = true;  // indicates to the onUpload function when to stop appending data to trust_root.txt
 int battery_voltage = 0;  // 10-bit battery value
 int device_state = 0;  // 1 bit device state
@@ -59,12 +59,12 @@ void setup() {
   #endif
 
   // Check if device should launch in config mode
-  pinMode(modePin, INPUT);
-  int operationMode = 1; // digitalRead(modePin);
-  if(operationMode){
+  //pinMode(modePin, INPUT);
+  int operationMode = 0; // digitalRead(modePin); this pin is pulled up by default, meaning a button press on gpio0 launches the device in config
+  if(operationMode==0){
     config_mode();
   }
-  else{
+  else if(operationMode==1){
     normal_mode();
   }
 }
@@ -166,7 +166,7 @@ void config_mode(){
   // Handle invalid request
   server.onNotFound([](AsyncWebServerRequest *request){
     #ifdef DEBUG_EN
-    Serail.println("Invalid Request");
+    Serial.println("Invalid Request");
     #endif
     request->send(404);  // Reply with not found
   });
@@ -195,15 +195,31 @@ void normal_mode(){
   #endif
 
   // Initate wifi connection to specified router/pass
+  #ifdef DEBUG_EN
+  Serial.print("Initating connection to " + router_ssid + " ");
+  #endif 
+  int r=0; //retry counter
   WiFi.begin(router_ssid, router_password);
-  while(WiFi.status() != WL_CONNECTED){
-    delay(100);
+  while((WiFi.status() != WL_CONNECTED) && (r < 30)){
+    r++;
+    delay(1000);
+    #ifdef DEBUG_EN
+    Serial.print(".");
+    #endif
+  }
+  if(r==30){
+    #ifdef DEBUG_EN
+    Serial.println("");
+    Serial.println("Connection failed, initiating sleep");
+    #endif
+    espSleep();
   }
   #ifdef DEBUG_EN
+  Serial.println("");
   Serial.print("Connected to " + router_ssid + " @");
   Serial.println(WiFi.localIP());
   #endif
-
+  
   #ifdef SECURE_EN
   configTime(3 * 3600, 0, "pool.ntp.org", "time.nist.gov");
   #ifdef DEBUG_EN
@@ -211,7 +227,7 @@ void normal_mode(){
   #endif
   time_t now = time(nullptr);  // Create a time object
   while (now < 8 * 3600 * 2) {  // Sync local time
-    delay(500);
+    delay(1000);
     #ifdef DEBUG_EN
     Serial.print(".");
     #endif
@@ -223,31 +239,42 @@ void normal_mode(){
   #ifdef DEBUG_EN
   Serial.println("");
   Serial.print("Current time: ");
-  Serial.print(asctime(&timeinfo));
+  Serial.println(asctime(&timeinfo));
+  Serial.println("Setting trust anchors");
   #endif
   httpsClient.setTrustAnchors(&cert);  // Trust anchors can only be set after time is syncd
   #else
+  #ifdef DEBUG_EN
+  Serial.println("Skipping setting trust anchors");
+  #endif
   httpsClient.setInsecure();  // This prevents host verification! Not reccomended unless testing
   #endif
 
   #ifdef DEBUG_EN
-  Serial.println("HTTPS Connecting to " + host);
+  Serial.print("HTTPS Connecting to " + host);
   #endif
-  int r=0; //retry counter
-  while((!httpsClient.connect(host, 443)) && (r < 30)){
-    delay(100); // depending on connection times, this delay can be tuned to reduce power consumption
+  r=0;
+  while((!httpsClient.connect(host, 443)) && (r < 30)){ //
+    delay(1000);
     r++;
+    #ifdef DEBUG_EN
+    Serial.print(".");
+    #endif
   }
-  #ifdef DEBUG_EN
   if(r==30) {
-    Serial.println("Connection failed, initiating sleep");
+    #ifdef DEBUG_EN
+    Serial.println("");
+    Serial.println("Connection failed");
+    #endif
     espSleep();
   }
   else {
+    #ifdef DEBUG_EN
+    Serial.println("");
     Serial.println("Connected to host");
+    #endif
   }
-  #endif
-  String request = generatePOST(host, device_id, device_state, battery_voltage);
+  String request = generatePATCH(host, device_id, device_state, battery_voltage);
   httpsClient.print(request);
   #ifdef DEBUG_EN
   Serial.println("Request sent:");
@@ -381,13 +408,12 @@ String processor(const String&var){
 }
 
 /* Creates an HTTPS post request for updating a specified database with device battery, state, and id */
-String generatePOST(String host, int deviceID, int deviceState, int deviceBattery){
+String generatePATCH(String host, int deviceID, int deviceState, int deviceBattery){
   String body = "{\r\n";  // Create body of post request in json format
-  body += "\"device_id\": " + String(deviceID) + "," + "\r\n";
   body += "\"device_state\": " + String(deviceState) + "," + "\r\n";
   body += "\"device_battery\": " + String(deviceBattery) + "\r\n";
   body += "}";
-  String post = "POST /post HTTP/1.1\r\n";  // Create headers, append previously generated body, append connection close
+  String post = (String)"PATCH " + "https://" + host + "/api/updateState" + "/" + (String)device_id + " HTTP/1.1\r\n";  // Create headers, append previously generated body, append connection close
   post += "Host: " + host + "\r\n";
   post += "Content-Type: application/json\r\n";
   post += "Content-Length: " + String(body.length()) + "\r\n\r\n";
