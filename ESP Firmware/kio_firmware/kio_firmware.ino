@@ -21,7 +21,7 @@ WiFiClientSecure httpsClient;  // client object to connect to database handler
 
 /* Device variables */
 int digi_pot = 0;  // holds the value that the digital potentiometer is set to
-int device_id = 1; // holds the unique device ID number
+String device_id = ""; // holds the unique device ID number
 bool eof = true;  // indicates to the onUpload function when to stop appending data to trust_root.txt
 int battery_voltage = 0;  // 10-bit battery value
 int device_state = 0;  // 1 bit device state
@@ -29,7 +29,7 @@ int device_state = 0;  // 1 bit device state
 /* Device pinout Constants */
 const int adcPin = A0;  // Analog read pin (0-1.0v, 10-bit)
 const int statePin = 16;  // Determins the current state of appliance light
-const int modePin = 0;  // Digital input, determines config or normal operation mode
+const int modePin = 0;  //  Digital input, determines config or normal operation mode 
 
 /* Local Access Point Variables */
 AsyncWebServer server(80);  // webserver object that listens for requests on port 80
@@ -60,7 +60,7 @@ void setup() {
 
   // Check if device should launch in config mode
   //pinMode(modePin, INPUT);
-  int operationMode = 0; // digitalRead(modePin); this pin is pulled up by default, meaning a button press on gpio0 launches the device in config
+  int operationMode = digitalRead(modePin);
   if(operationMode==0){
     config_mode();
   }
@@ -188,8 +188,8 @@ void normal_mode(){
 
   pinMode(adcPin, INPUT);
   pinMode(statePin, INPUT);
-  battery_voltage = 1023;  // analogRead(adcPin); NEED TO CHANGE TO PIN READS 
-  device_state = 1;  // digitalRead(statePin);    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  battery_voltage = analogRead(adcPin);  
+  device_state = digitalRead(statePin);
   #ifdef DEBUG_EN
   Serial.println("Read battery voltage as: " + (String)battery_voltage + "\nRead device state as: " + (String)device_state);
   #endif
@@ -304,8 +304,9 @@ void espSleep(){
 /* Loads variables from files */
 void loadVariables(){
   #ifdef DEBUG_EN
-  Serial.println("Loading variables from files");
+  Serial.println("Loading variables from files and finding device ID");
   #endif
+  device_id = (String)findID();
   digi_pot = atoi(readFile("digi_pot.txt").c_str());
   host = readFile("host.txt");
   router_password = readFile("router_password.txt");
@@ -407,17 +408,26 @@ String processor(const String&var){
   return returnval;
 }
 
-/* Creates an HTTPS post request for updating a specified database with device battery, state, and id */
-String generatePATCH(String host, int deviceID, int deviceState, int deviceBattery){
+/* Creates an HTTPS patch request for specified device id, with specified device state and device battery variables in .json format */
+String generatePATCH(String host, String deviceID, int deviceState, int deviceBattery){
   String body = "{\r\n";  // Create body of post request in json format
   body += "\"device_state\": " + String(deviceState) + "," + "\r\n";
   body += "\"device_battery\": " + String(deviceBattery) + "\r\n";
   body += "}";
-  String post = (String)"PATCH " + "https://" + host + "/api/updateState" + "/" + (String)device_id + " HTTP/1.1\r\n";  // Create headers, append previously generated body, append connection close
+  String post = (String)"PATCH " + "https://" + host + "/api/updateState" + "/" + device_id + " HTTP/1.1\r\n";  // Create headers, append previously generated body, append connection close
   post += "Host: " + host + "\r\n";
   post += "Content-Type: application/json\r\n";
   post += "Content-Length: " + String(body.length()) + "\r\n\r\n";
   post += body + "\r\n";
-  post += "Connection: close\r\n\r\n";
+  post += "Connection: keep-alive\r\n\r\n";
   return post;  // return result
+}
+
+/* Derives Device ID number from last 4 of MAC address */
+int findID (){
+  uint8_t mac[6];  // create temporary variable to store whole mac
+  int returnval = 0;  // create empty summation value
+  WiFi.macAddress(mac);  // retreive mac into temporary variable
+  returnval = mac[6] + (256*mac[5]);  // Sum the last 4 bytes of the mac address
+  return returnval;  // return summation
 }
